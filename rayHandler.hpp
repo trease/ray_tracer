@@ -28,19 +28,17 @@ class Rays{
 public:
 	Rays(string filename_in);
 	~Rays();
-	Object intersection(vector<Object> O, Camera C, cord viewer);
-	bool isIntersection(Object O, cord A, cord viewer);
+	Object intersection(vector<Object> O, Camera C, Coordinates viewer);
+	bool isIntersection(Object O, Coordinates A, Coordinates viewer);
 	void handler(vector<Object> O, vector<Light> L, Camera C,int cores);
 	void save(QImage* obj);
 	void tracer(int i, int j, vector<Object> O, vector<Light> L, Camera C);
-	cord norm(cord value, bool op);
-	cord norm(double x, double y, double z, bool op);
+	Coordinates norm(Coordinates value, bool op);
+	Coordinates norm(double x, double y, double z, bool op);
 private:
 	QString filename;
-	QImage* obj;
-	vector<pixS> disp;
-	atomic<double> high;
-	ThreadSafeQueue<pixS> qu;
+	atomic<double> highColorValue;
+	ThreadSafeQueue<pixS> threadSafeQueue;
 };
 
 

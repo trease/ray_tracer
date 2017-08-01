@@ -9,9 +9,11 @@ using namespace std;
 Json::Json(){
 	errorFlag = false;
 }
+
 Json::Json(bool flag){
 	errorFlag = flag;
 }
+
 Json::Json(Camera camera_in, vector <Light> lights_in, vector <Object> objects_in){
 	camera = camera_in;
 	lights = lights_in;
@@ -63,8 +65,8 @@ Json Json::fromJSON(QString json){
 		cerr << "Error in resolution" << endl;
 		return Json(true);
 	} tempCamera.resolution.y = resValue1.toDouble(); 
-	QJsonValue si = obj1.value(QString("size")); 
-	QJsonArray size = si.toArray(); 
+	QJsonValue CanvasSize = obj1.value(QString("size")); 
+	QJsonArray size = CanvasSize.toArray(); 
 	QJsonValue sizeValue = size[0];
 	if (sizeValue.toDouble() < 0) {
 		cerr << "Error in size" << endl;
@@ -93,7 +95,7 @@ Json Json::fromJSON(QString json){
 		QJsonValue loc_toObj = obj2.value(QString("location")); 
 		QJsonObject loc = loc_toObj.toObject(); QJsonValue loc_x = loc["x"]; QJsonValue loc_y = loc["y"];
 		QJsonValue loc_z = loc["z"]; 
-		cord temp; temp.x = loc_x.toDouble(); 
+		Coordinates temp; temp.x = loc_x.toDouble(); 
 		temp.y = loc_y.toDouble(); 
 		temp.z = loc_z.toDouble(); 
 		tempLight.location = temp; 
@@ -111,7 +113,7 @@ Json Json::fromJSON(QString json){
 		QJsonValue center_x = center["x"]; 
 		QJsonValue center_y = center["y"]; 
 		QJsonValue center_z = center["z"];
-		cord temp; temp.x = center_x.toDouble(); 
+		Coordinates temp; temp.x = center_x.toDouble(); 
 		temp.y = center_y.toDouble(); 
 		temp.z = center_z.toDouble();
 		tempObject.center = temp; 
@@ -124,7 +126,7 @@ Json Json::fromJSON(QString json){
 			cerr << "Error color value out of range" << endl;
 			return Json(true);
 		} 
-		col temp1; 
+		RGBValue temp1; 
 		temp1.r = color_r.toDouble(); 
 		temp1.b = color_b.toDouble(); 
 		temp1.g = color_g.toDouble(); 
@@ -139,7 +141,7 @@ Json Json::fromJSON(QString json){
 		QJsonValue normal_x = normal["x"]; 
 		QJsonValue normal_y = normal["y"]; 
 		QJsonValue normal_z = normal["z"];
-		cord temp2; 
+		Coordinates temp2; 
 		temp2.x = normal_x.toDouble(); 
 		temp2.y = normal_y.toDouble(); 
 		temp2.z = normal_z.toDouble(); 

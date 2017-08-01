@@ -9,7 +9,7 @@
 #include <chrono> 
 
 #include "json.hpp"
-#include "ray_handler.hpp"
+#include "rayHandler.hpp"
 
 int main(int argc, char* argv[]){
 	if(argc == 3){

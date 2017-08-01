@@ -12,49 +12,49 @@
 
 using namespace std;
 
-struct cord{
+struct Coordinates{
 	double x;
 	double y;
 	double z;
 };
 
-struct col{
+struct RGBValue{
 	int b;
 	int g;
 	int r;
 };
 
-struct res{
+struct Resolution{
 	double x;
 	double y;
 };
-struct si{
+struct CanvasSize{
 	int x;
 	int y;
 };
 struct Ray{
-	cord start;
+	Coordinates start;
 	double direction;
 };
 
 struct Camera{
-	cord center;
+	Coordinates center;
 	double focus;
-	cord normal;
-	res resolution;
-	si size;
+	Coordinates normal;
+	Resolution resolution;
+	CanvasSize size;
 };
 	
 struct Light{
 	double intensity;
-	cord location;
+	Coordinates location;
 };
 
 struct Object{
-	cord center;
-	col color;
+	Coordinates center;
+	RGBValue color;
 	double lambert;
-	cord normal;
+	Coordinates normal;
 	double radius;
 	QString type;
 	double t;

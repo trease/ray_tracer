@@ -1,40 +1,42 @@
-#include "ray_handler.hpp"
+#include "rayHandler.hpp"
 Rays::Rays(string filename_in){
 	filename = QString::fromStdString(filename_in);	
-	high = 255;
+	highColorValue = 255; //highest color value in the image, is added to only if value is above acceptable values
 }
 Rays::~Rays(){
 }
 
 void Rays::handler(vector<Object> O, vector<Light> L, Camera C, int cores){
-	chrono::time_point<chrono::system_clock> start, end;
-	chrono::duration<double> elapsed_seconds;
+	chrono::time_point<chrono::system_clock> startTime = chrono::system_clock::now();
 
-	start = chrono::system_clock::now();
-	QRgb value = qRgb(0,0,0);
+	QRgb colorValue = qRgb(0,0,0);
 	QImage pic(C.size.x, C.size.y, QImage::Format_RGB32);
-	vector<thread> threads;
 	pic.fill(Qt::black);
+
+	vector<thread> threads;
+
 	for (int a = 0; a < cores; a++) {
 		threads.push_back(thread(&Rays::tracer, this, (C.size.x / cores) * a, (((C.size.x / cores)*(a + 1))), O, L, C));
 	}
 	for (int b = 0; b < cores; b++) {
 		threads[b].join();
 	}
-	end = chrono::system_clock::now();
-	double conv = high / 255;
-	for (int j = 0; j < qu.size(); j++) {
-		value = qRgb(qu.front().r/ conv, qu.front().g/ conv, qu.front().b/ conv);
-		pic.setPixel(qu.front().x, qu.front().y, value);
-		qu.wait_and_pop();
+
+	chrono::time_point<chrono::system_clock> endTime = chrono::system_clock::now();
+
+	double convert = highColorValue / 255;
+	for (int j = 0; j < threadSafeQueue.size(); j++) {
+		colorValue = qRgb(threadSafeQueue.front().r/ convert, threadSafeQueue.front().g/ convert, threadSafeQueue.front().b/ convert);
+		pic.setPixel(threadSafeQueue.front().x, threadSafeQueue.front().y, colorValue);
+		threadSafeQueue.wait_and_pop();
 	}
 	
 	save(&pic);
-	elapsed_seconds = end - start;
+	chrono::duration<double> elapsed_seconds = endTime - startTime;
 	cout << "time to run: " << elapsed_seconds.count() << endl;
 }
 
-Object Rays::intersection(vector<Object> O, Camera C, cord viewer) {
+Object Rays::intersection(vector<Object> O, Camera C, Coordinates viewer) {
 	double focus = -1 * C.focus;
 	double x1 = (C.resolution.x*(viewer.x - (C.size.x / 2)));
 	double y1 = (C.resolution.y*(viewer.y - (C.size.y / 2)));
@@ -60,10 +62,10 @@ Object Rays::intersection(vector<Object> O, Camera C, cord viewer) {
 		}
 		else if (O[i].type == "plane") {
 			double t0 = 10000000;
-			cord nv = norm(dx, dy, dz, false);
+			Coordinates nv = norm(dx, dy, dz, false);
 			double plane = nv.x*O[i].normal.x + nv.y*O[i].normal.y + nv.z*O[i].normal.z;
 			if (fabs(plane) > 1e-6) {
-				cord nr = norm(O[i].center.x - C.center.x, O[i].center.y - C.center.y, O[i].center.z - focus, false);
+				Coordinates nr = norm(O[i].center.x - C.center.x, O[i].center.y - C.center.y, O[i].center.z - focus, false);
 				
 				t0 = (nr.x*O[i].normal.x + nr.y*O[i].normal.y + nr.z*O[i].normal.z);
 				t0 = t0 / plane;
@@ -83,7 +85,7 @@ Object Rays::intersection(vector<Object> O, Camera C, cord viewer) {
 	return saveObj;
 }
 
-bool Rays::isIntersection(Object O,cord A, cord viewer){
+bool Rays::isIntersection(Object O, Coordinates A, Coordinates viewer){
 	double dx = viewer.x-A.x;
 	double dy = viewer.y-A.y;
 	double dz = viewer.z-A.z;
@@ -95,10 +97,10 @@ bool Rays::isIntersection(Object O,cord A, cord viewer){
 			return ((operand > 1e-6));
 		}
 		if(O.type == "plane"){
-			cord nv = norm(dx, dy, dz, false);
+			Coordinates nv = norm(dx, dy, dz, false);
 			double plane = nv.x*O.normal.x + nv.y*O.normal.y + nv.z*O.normal.z;
 			if (plane > 1e-6){
-				cord nr = norm(O.center.x - A.x, O.center.y - A.y, O.center.z - A.z, false);
+				Coordinates nr = norm(O.center.x - A.x, O.center.y - A.y, O.center.z - A.z, false);
 				double t = (nr.x*O.normal.x + nr.y*O.normal.y + nr.z*O.normal.z);
 				t = t/plane;
 				return ((t > 1e-6));
@@ -112,7 +114,7 @@ void Rays::tracer(int a, int b, vector<Object> O, vector<Light> L, Camera C) {
 	double t2 = 0;
 	for (int i = a; i < b; i++) {
 		for (int j = 0; j < C.size.y; j++) {
-			cord pass;
+			Coordinates pass;
 			pass.x = i; pass.y = j; pass.z = 0;
 			Object saveObj = intersection(O, C, pass);
 			pixS pix;
@@ -123,12 +125,12 @@ void Rays::tracer(int a, int b, vector<Object> O, vector<Light> L, Camera C) {
 			double dx = x1 - C.center.x;
 			double dy = y1 - C.center.y;
 			double dz = 0 - focus;
-			cord ret = norm(C.center.x + saveObj.t*dx, C.center.y + saveObj.t*dy, focus + saveObj.t*dz, false);
+			Coordinates ret = norm(C.center.x + saveObj.t*dx, C.center.y + saveObj.t*dy, focus + saveObj.t*dz, false);
 			for (unsigned int n = 0; n < L.size(); n++) {
-				cord N;
+				Coordinates N;
 				N.x = 0; N.y = 0; N.z = 0;
-				cord Lt;
-				cord light = norm(L[n].location.x, L[n].location.y, L[n].location.z, false);
+				Coordinates Lt;
+				Coordinates light = norm(L[n].location.x, L[n].location.y, L[n].location.z, false);
 				if (saveObj.type == "sphere") {
 					N.x = ((ret.x - saveObj.center.x) / saveObj.radius);
 					N.y = ((ret.y - saveObj.center.y) / saveObj.radius);
@@ -161,19 +163,19 @@ void Rays::tracer(int a, int b, vector<Object> O, vector<Light> L, Camera C) {
 			else if (pix.b < 0) 
 				pix.b = 0;
 
-			if (pix.r > high) 
-				high = pix.r;
-			else if (pix.g > high) 
-				high = pix.g;
-			else if (pix.b > high) 
-				high = pix.b;
-			qu.push(pix);
+			if (pix.r > highColorValue) 
+				highColorValue = pix.r;
+			else if (pix.g > highColorValue) 
+				highColorValue = pix.g;
+			else if (pix.b > highColorValue) 
+				highColorValue = pix.b;
+			threadSafeQueue.push(pix);
 		}
 	}
 }
 
-cord Rays::norm(cord value, bool op) {
-	cord ret; ret.x = 0; ret.y = 0; ret.z = 0;
+Coordinates Rays::norm(Coordinates value, bool op) {
+	Coordinates ret; ret.x = 0; ret.y = 0; ret.z = 0;
 	if (op) {
 		double mag = sqrt(value.x*value.x + value.y*value.y + value.z*value.z);
 		ret.x = value.x / mag;
@@ -183,13 +185,13 @@ cord Rays::norm(cord value, bool op) {
 	return ret;
 }
 
-cord Rays::norm(double x, double y, double z, bool op) {
-	cord ret; 
+Coordinates Rays::norm(double x, double y, double z, bool op) {
+	Coordinates ret; 
 	ret.x = x; 
 	ret.y = y; 
 	ret.z = z;
 	if (op) {
-		cord value;
+		Coordinates value;
 		value.x = x;
 		value.y = y;
 		value.z = z;

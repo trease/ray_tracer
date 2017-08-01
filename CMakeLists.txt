@@ -17,7 +17,7 @@ find_package(Qt5Core REQUIRED)
 set(src
   json.hpp json.cpp
   #ray.hpp ray.cpp
-  ray_handler.hpp ray_handler.cpp
+  rayHandler.hpp rayHandler.cpp
   threadsafequeue.hpp
   )
 
