@@ -5,3 +5,5 @@ ubuntu-xenial-16.04-cloudimg-console.log
 windows
 Coverage_Report
 build
+.vagrant
+scripts
